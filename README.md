@@ -1,13 +1,16 @@
 # AO Process Builder Backend
 
-This directory contains the Express.js API server for the AO Process Builder.
+This directory contains the TypeScript Express.js API server for the AO Process Builder.
 
 ## Directory Structure
 
-- **src/** - Source code
-  - **controllers/** - API controllers
-  - **routes/** - API routes
-  - **index.js** - Main entry point
+-   **src/** - Source code
+    -   **controllers/** - API controllers
+    -   **routes/** - API routes
+    -   **services/** - Service layer for external interactions
+    -   **types/** - TypeScript type definitions
+    -   **index.ts** - Main entry point
+-   **dist/** - Compiled JavaScript output
 
 ## Installation
 
@@ -19,10 +22,13 @@ npm install
 ## Usage
 
 ```bash
-# Start the server
-node src/index.js
+# Build the TypeScript code
+npm run build
 
-# Or with nodemon for development
+# Start the server
+npm start
+
+# Or for development with auto-reload
 npm run dev
 ```
 
@@ -41,10 +47,11 @@ POST /api/connect
 ```
 
 Request body:
+
 ```json
 {
-  "processId": "YOUR_PROCESSBUILDER_ID",
-  "emailBotId": "YOUR_EMAILBOT_ID"
+    "processId": "YOUR_PROCESSBUILDER_ID",
+    "emailBotId": "YOUR_EMAILBOT_ID"
 }
 ```
 
@@ -61,13 +68,14 @@ POST /api/automations
 ```
 
 Request body:
+
 ```json
 {
-  "When": "File Uploaded",
-  "Then": "Send Email",
-  "Target": "YOUR_EMAILBOT_ID",
-  "Name": "File Upload Notification",
-  "Description": "Sends an email when a file is uploaded"
+    "When": "File Uploaded",
+    "Then": "Send Email",
+    "Target": "YOUR_EMAILBOT_ID",
+    "Name": "File Upload Notification",
+    "Description": "Sends an email when a file is uploaded"
 }
 ```
 
@@ -96,9 +104,10 @@ POST /api/automations/:id/trigger
 ```
 
 Request body:
+
 ```json
 {
-  "action": "File Uploaded",
-  "data": "important_document.pdf"
+    "action": "File Uploaded",
+    "data": "important_document.pdf"
 }
 ```
