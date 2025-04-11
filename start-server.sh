@@ -13,6 +13,10 @@ else
     echo "AOS is already running."
 fi
 
+# Build TypeScript files
+echo "Building TypeScript files..."
+npm run build
+
 # Start the API server
 echo "Starting AO Process Builder API server..."
-node src/index.js
+node dist/index.js
