@@ -1,9 +1,10 @@
 // Automation Routes
 // Routes for managing automations
 
-const express = require('express');
+import express from 'express';
+import * as automationController from '../controllers/automationController';
+
 const router = express.Router();
-const automationController = require('../controllers/automationController');
 
 // Create a new automation
 router.post('/', automationController.createAutomation);
@@ -23,4 +24,4 @@ router.delete('/:id', automationController.deleteAutomation);
 // Trigger an automation
 router.post('/:id/trigger', automationController.triggerAutomation);
 
-module.exports = router;
+export default router;
