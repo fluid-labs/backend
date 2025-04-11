@@ -1,18 +1,33 @@
 // AO Service
 // Handles direct interaction with the AO network
 
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { APIError } from '../types';
 
 // Store AO process information
-let processBuilderID = null;
-let emailBotID = null;
-let aosProcess = null;
+let processBuilderID: string | null = null;
+let emailBotID: string | null = null;
+let aosProcess: any = null;
+
+interface AOConnectionResult {
+  success: boolean;
+  processId?: string;
+  emailBotId?: string;
+  error?: string;
+}
+
+interface MessageResult {
+  success: boolean;
+  target: string;
+  action: string;
+  output: string;
+}
 
 // Initialize AO connection
-const initializeAO = async () => {
+const initializeAO = async (): Promise<boolean> => {
   try {
     console.log('Initializing AO connection...');
     
@@ -50,7 +65,7 @@ const initializeAO = async () => {
 };
 
 // Connect to AO process
-const connectToAO = async (processId, emailBotId) => {
+const connectToAO = async (processId: string, emailBotId: string): Promise<AOConnectionResult> => {
   try {
     processBuilderID = processId;
     emailBotID = emailBotId;
@@ -68,12 +83,13 @@ const connectToAO = async (processId, emailBotId) => {
     };
   } catch (error) {
     console.error('Failed to connect to AO:', error);
-    return { success: false, error: error.message };
+    const err = error as Error;
+    return { success: false, error: err.message };
   }
 };
 
 // Send a message to an AO process
-const sendMessage = async (target, action, data) => {
+const sendMessage = async (target: string, action: string, data?: string): Promise<MessageResult> => {
   try {
     console.log(`Sending message to ${target}:`);
     console.log(`  Action: ${action}`);
@@ -99,21 +115,21 @@ const sendMessage = async (target, action, data) => {
     `);
     
     // Execute the script with AOS
-    return new Promise((resolve, reject) => {
+    return new Promise<MessageResult>((resolve, reject) => {
       const aos = spawn('aos', ['-e', scriptPath]);
       
       let output = '';
       
-      aos.stdout.on('data', (data) => {
+      aos.stdout.on('data', (data: Buffer) => {
         output += data.toString();
         console.log(`AOS output: ${data.toString()}`);
       });
       
-      aos.stderr.on('data', (data) => {
+      aos.stderr.on('data', (data: Buffer) => {
         console.error(`AOS error: ${data.toString()}`);
       });
       
-      aos.on('close', (code) => {
+      aos.on('close', (code: number | null) => {
         // Clean up the temporary directory
         fs.rmSync(tempDir, { recursive: true, force: true });
         
@@ -127,7 +143,7 @@ const sendMessage = async (target, action, data) => {
           });
         } else {
           console.error(`AOS process exited with code ${code}`);
-          reject(new Error(`AOS process exited with code ${code}`));
+          reject(new APIError(`AOS process exited with code ${code}`, 500));
         }
       });
     });
@@ -138,10 +154,10 @@ const sendMessage = async (target, action, data) => {
 };
 
 // Get process IDs
-const getProcessId = () => processBuilderID;
-const getEmailBotId = () => emailBotID;
+const getProcessId = (): string | null => processBuilderID;
+const getEmailBotId = (): string | null => emailBotID;
 
-module.exports = {
+export {
   connectToAO,
   sendMessage,
   getProcessId,

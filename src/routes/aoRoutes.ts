@@ -1,9 +1,10 @@
 // AO Routes
 // Routes for interacting with the AO platform
 
-const express = require('express');
+import express from 'express';
+import * as aoController from '../controllers/aoController';
+
 const router = express.Router();
-const aoController = require('../controllers/aoController');
 
 // Connect to the AO platform
 router.post('/connect', aoController.connectToAO);
@@ -23,4 +24,4 @@ router.post('/send', aoController.sendMessage);
 // Get messages from an AO process
 router.get('/messages/:processId', aoController.getMessages);
 
-module.exports = router;
+export default router;
