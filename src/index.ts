@@ -3,11 +3,17 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import path from 'path';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Import routes
 import automationRoutes from './routes/automationRoutes';
 import aoRoutes from './routes/aoRoutes';
+import telegramRoutes from './routes/telegramRoutes';
 import { ErrorResponse, HealthResponse } from './types';
+import telegramBotService from './services/telegramBotService';
 
 // Create Express app
 const app = express();
@@ -15,8 +21,12 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '../../frontend/build')));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -27,6 +37,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Routes
 app.use('/api/automations', automationRoutes);
 app.use('/api', aoRoutes);
+app.use('/api/telegram', telegramRoutes);
 
 // Health check endpoint
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -45,15 +56,21 @@ app.get('*', (_req: Request, res: Response) => {
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err.stack);
-  
+
   const errorResponse: ErrorResponse = {
     error: true,
     message: err.message || 'An unexpected error occurred',
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   };
-  
+
   res.status(500).json(errorResponse);
 });
+
+// Initialize the Telegram bot on startup if token is available
+if (process.env.TELEGRAM_BOT_TOKEN) {
+  telegramBotService.initialize();
+  console.log('Telegram bot initialized on startup');
+}
 
 // Start the server
 app.listen(PORT, () => {

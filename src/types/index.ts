@@ -52,10 +52,59 @@ export interface HealthResponse {
 // Custom error class for API errors
 export class APIError extends Error {
   statusCode: number;
-  
+
   constructor(message: string, statusCode: number = 500) {
     super(message);
     this.name = 'APIError';
     this.statusCode = statusCode;
   }
+}
+
+// Global application types
+
+// Health response for health check endpoint
+export interface HealthResponse {
+  status: string;
+  timestamp: string;
+}
+
+// Error response for API errors
+export interface ErrorResponse {
+  error: boolean;
+  message: string;
+  stack?: string;
+}
+
+// Telegram file interface
+export interface TelegramFile {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  uploadedBy: string;
+  telegramFileId: string;
+  fileUrl?: string;
+  localPath?: string;
+  createdAt: Date;
+}
+
+// AO Connection interfaces
+export interface AOConnectionRequest {
+  processId: string;
+  emailBotId?: string;
+}
+
+export interface AOConnectionResult {
+  connected: boolean;
+  processId: string;
+  emailBotId?: string;
+  error?: string;
+}
+
+// Target interface
+export interface Target {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
 }
