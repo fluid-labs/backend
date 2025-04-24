@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "@ardrive/turbo-sdk": "^1.23.5",
+        "@permaweb/aoconnect": "^0.0.82",
         "axios": "^1.8.4",
         "body-parser": "^1.20.2",
         "cors": "^2.8.5",
