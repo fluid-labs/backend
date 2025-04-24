@@ -1,6 +1,10 @@
 // Token price controller
-import { Request, Response } from 'express';
-import { getArweaveTokenPrice, getUpdatedTokenPrice } from '../services/tokenPriceService';
+import { Request, Response } from "express";
+import {
+    getArweaveTokenPrice,
+    getUpdatedTokenPrice,
+    getAOTokenPrice,
+} from "../services/tokenPriceService";
 
 /**
  * Get Arweave token price using the Get-Oracle-Price action
@@ -8,16 +12,16 @@ import { getArweaveTokenPrice, getUpdatedTokenPrice } from '../services/tokenPri
  * @param res Express response
  */
 export const getArweavePrice = async (req: Request, res: Response) => {
-  try {
-    const priceInfo = await getArweaveTokenPrice();
-    res.status(200).json(priceInfo);
-  } catch (error: any) {
-    console.error('Error fetching Arweave price:', error);
-    res.status(500).json({
-      error: 'Failed to fetch Arweave price',
-      message: error.message || 'Unknown error'
-    });
-  }
+    try {
+        const priceInfo = await getArweaveTokenPrice();
+        res.status(200).json(priceInfo);
+    } catch (error: any) {
+        console.error("Error fetching Arweave price:", error);
+        res.status(500).json({
+            error: "Failed to fetch Arweave price",
+            message: error.message || "Unknown error",
+        });
+    }
 };
 
 /**
@@ -26,14 +30,32 @@ export const getArweavePrice = async (req: Request, res: Response) => {
  * @param res Express response
  */
 export const getUpdatedPrice = async (req: Request, res: Response) => {
-  try {
-    const priceInfo = await getUpdatedTokenPrice();
-    res.status(200).json(priceInfo);
-  } catch (error: any) {
-    console.error('Error fetching updated token price:', error);
-    res.status(500).json({
-      error: 'Failed to fetch updated token price',
-      message: error.message || 'Unknown error'
-    });
-  }
+    try {
+        const priceInfo = await getUpdatedTokenPrice();
+        res.status(200).json(priceInfo);
+    } catch (error: any) {
+        console.error("Error fetching updated token price:", error);
+        res.status(500).json({
+            error: "Failed to fetch updated token price",
+            message: error.message || "Unknown error",
+        });
+    }
+};
+
+/**
+ * Get AO token price using the Get-Stats action
+ * @param req Express request
+ * @param res Express response
+ */
+export const getAOPrice = async (req: Request, res: Response) => {
+    try {
+        const priceInfo = await getAOTokenPrice();
+        res.status(200).json(priceInfo);
+    } catch (error: any) {
+        console.error("Error fetching AO token price:", error);
+        res.status(500).json({
+            error: "Failed to fetch AO token price",
+            message: error.message || "Unknown error",
+        });
+    }
 };
