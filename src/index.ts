@@ -68,8 +68,19 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 // Initialize the Telegram bot on startup if token is available
 if (process.env.TELEGRAM_BOT_TOKEN) {
-  telegramBotService.initialize();
-  console.log('Telegram bot initialized on startup');
+  // Use an async IIFE to properly await initialization
+  (async () => {
+    try {
+      const initialized = await telegramBotService.initialize();
+      if (initialized) {
+        console.log('Telegram bot successfully initialized on startup');
+      } else {
+        console.error('Failed to initialize Telegram bot on startup');
+      }
+    } catch (error) {
+      console.error('Error initializing Telegram bot on startup:', error);
+    }
+  })();
 }
 
 // Start the server

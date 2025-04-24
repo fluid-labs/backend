@@ -86,6 +86,38 @@ export interface TelegramFile {
   fileUrl?: string;
   localPath?: string;
   createdAt: Date;
+  // ArDrive properties
+  arweaveId?: string;
+  arweaveUrl?: string;
+  arweaveUploadStatus?: 'pending' | 'success' | 'failed';
+  arweaveUploadError?: string;
+}
+
+// Telegram message interface for storing pending messages
+export interface TelegramMessage {
+  id: string;
+  type: 'document' | 'photo' | 'text';
+  context: any; // The Telegram context object
+  receivedAt: Date;
+  processed?: boolean;
+}
+
+// Workflow interface
+export interface Workflow {
+  id: string;
+  name: string;
+  status: 'active' | 'inactive';
+  nodes: WorkflowNode[];
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Workflow node interface
+export interface WorkflowNode {
+  id: string;
+  type: 'telegram_receive' | 'ardrive_upload' | 'other';
+  config: any;
+  position: { x: number; y: number };
 }
 
 // AO Connection interfaces
@@ -107,4 +139,27 @@ export interface Target {
   name: string;
   description: string;
   icon: string;
+}
+
+// ArDrive interfaces
+export interface ArDriveUploadResult {
+  success: boolean;
+  id?: string;
+  owner?: string;
+  dataCaches?: string[];
+  fastFinalityIndexes?: number[];
+  error?: string;
+  txId?: string;
+  url?: string;
+}
+
+export interface ArDriveFile {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+  uploadedBy: string;
+  arweaveId?: string;
+  arweaveUrl?: string;
+  uploadedAt: Date;
 }
