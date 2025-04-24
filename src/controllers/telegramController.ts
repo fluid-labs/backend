@@ -187,13 +187,13 @@ export const getArDriveBalance = async (_req: Request, res: Response): Promise<R
         }
 
         const balance = await ardriveService.getBalance();
-        const address = await ardriveService.getAddress();
+        // const address = await ardriveService.getAddress();
 
         return res.status(200).json({
             success: true,
             balance: balance.formattedBalance,
             raw_balance: balance.balance,
-            wallet_address: address
+            // wallet_address: address
         });
     } catch (error) {
         console.error('Error getting ArDrive balance:', error);
