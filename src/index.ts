@@ -39,6 +39,31 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Proxy endpoint to forward requests to localhost:3003
+app.post("/api/proxy/telegram/send", async (req: Request, res: Response) => {
+  try {
+    console.log("Forwarding Telegram notification request to localhost:3003");
+
+    const response = await fetch("http://localhost:3003/api/telegram/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const data = await response.json();
+
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("Error forwarding to localhost:3003:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Failed to forward request to localhost:3003"
+    });
+  }
+});
+
 // Routes
 app.use("/api/automations", automationRoutes);
 app.use("/api", aoRoutes);
