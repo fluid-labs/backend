@@ -6,7 +6,7 @@ import {
     getAOPrice,
 } from "../controllers/tokenPriceController";
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * @route GET /api/token-price/arweave

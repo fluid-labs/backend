@@ -1,27 +1,27 @@
 // Automation Routes
 // Routes for managing automations
 
-import express from 'express';
-import * as automationController from '../controllers/automationController';
+import express, { Router } from "express";
+import * as automationController from "../controllers/automationController";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // Create a new automation
-router.post('/', automationController.createAutomation);
+router.post("/", automationController.createAutomation);
 
 // Get all automations
-router.get('/', automationController.getAutomations);
+router.get("/", automationController.getAutomations);
 
 // Get a specific automation
-router.get('/:id', automationController.getAutomation);
+router.get("/:id", automationController.getAutomation);
 
 // Update an automation
-router.put('/:id', automationController.updateAutomation);
+router.put("/:id", automationController.updateAutomation);
 
 // Delete an automation
-router.delete('/:id', automationController.deleteAutomation);
+router.delete("/:id", automationController.deleteAutomation);
 
 // Trigger an automation
-router.post('/:id/trigger', automationController.triggerAutomation);
+router.post("/:id/trigger", automationController.triggerAutomation);
 
 export default router;
