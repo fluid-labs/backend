@@ -1,60 +1,66 @@
 // Token price controller
 import { Request, Response } from "express";
 import {
-    getArweaveTokenPrice,
-    getUpdatedTokenPrice,
-    getAOTokenPrice,
+    getTokenPrice,
+    getSupportedTokens,
 } from "../services/tokenPriceService";
 
 /**
- * Get Arweave token price using the Get-Oracle-Price action
+ * Get token price by symbol via query parameter
  * @param req Express request
  * @param res Express response
  */
-export const getArweavePrice = async (req: Request, res: Response) => {
+export const getTokenPriceBySymbol = async (req: Request, res: Response) => {
     try {
-        const priceInfo = await getArweaveTokenPrice();
+        const { token } = req.query;
+
+        if (!token || typeof token !== "string") {
+            return res.status(400).json({
+                error: "Missing or invalid token parameter",
+                message:
+                    "Please provide a valid token symbol as a query parameter",
+                supportedTokens: getSupportedTokens(),
+                example: "/api/token-price?token=AO",
+            });
+        }
+
+        const priceInfo = await getTokenPrice(token);
         res.status(200).json(priceInfo);
     } catch (error: any) {
-        console.error("Error fetching Arweave price:", error);
+        console.error("Error fetching token price:", error);
+
+        if (error.message.includes("Unsupported token")) {
+            return res.status(400).json({
+                error: "Unsupported token",
+                message: error.message,
+                supportedTokens: getSupportedTokens(),
+            });
+        }
+
         res.status(500).json({
-            error: "Failed to fetch Arweave price",
+            error: "Failed to fetch token price",
             message: error.message || "Unknown error",
         });
     }
 };
 
 /**
- * Get updated token price using the Get-Price-For-Token action
+ * Get list of supported tokens
  * @param req Express request
  * @param res Express response
  */
-export const getUpdatedPrice = async (req: Request, res: Response) => {
+export const getSupportedTokensList = async (req: Request, res: Response) => {
     try {
-        const priceInfo = await getUpdatedTokenPrice();
-        res.status(200).json(priceInfo);
-    } catch (error: any) {
-        console.error("Error fetching updated token price:", error);
-        res.status(500).json({
-            error: "Failed to fetch updated token price",
-            message: error.message || "Unknown error",
+        const tokens = getSupportedTokens();
+        res.status(200).json({
+            supportedTokens: tokens,
+            count: tokens.length,
+            examples: tokens.map((token) => `/api/token-price?token=${token}`),
         });
-    }
-};
-
-/**
- * Get AO token price using the Get-Stats action
- * @param req Express request
- * @param res Express response
- */
-export const getAOPrice = async (req: Request, res: Response) => {
-    try {
-        const priceInfo = await getAOTokenPrice();
-        res.status(200).json(priceInfo);
     } catch (error: any) {
-        console.error("Error fetching AO token price:", error);
+        console.error("Error getting supported tokens:", error);
         res.status(500).json({
-            error: "Failed to fetch AO token price",
+            error: "Failed to get supported tokens",
             message: error.message || "Unknown error",
         });
     }
