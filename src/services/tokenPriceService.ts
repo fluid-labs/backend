@@ -1,6 +1,4 @@
 // Token price service
-import { spawn } from "child_process";
-import path from "path";
 import axios from "axios";
 
 /**
@@ -8,279 +6,163 @@ import axios from "axios";
  */
 export interface TokenPriceInfo {
     token: string;
-    id: string;
+    processId: string;
     price: string;
-    currency: string;
+    currency?: string;
     timestamp: string;
-    method?: string;
 }
 
 /**
- * Get Arweave token price using the Get-Oracle-Price action
- * @returns Promise<TokenPriceInfo> Price information for Arweave token
+ * Token configuration mapping
  */
-export async function getArweaveTokenPrice(): Promise<TokenPriceInfo> {
-    return new Promise((resolve, reject) => {
-        try {
-            // Path to the script in the @randao-test directory
-            const scriptPath = path.resolve(
-                process.cwd(),
-                "../@randao-test/arweave-price.js"
-            );
+const TOKEN_CONFIG = {
+    AO: {
+        processId: "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc",
+        endpoint: "usd-price",
+    },
+    AR: {
+        processId: "xU9zFkq3X2ZQ6olwNVvr1vUWIjc3kXTWr7xKQD6dh10",
+        endpoint: "usd-price",
+    },
+    ARIO: {
+        processId: "qNvAoz0TgcH7DMg8BCVn8jF32QH5L6T29VjHxhHqqGE",
+        endpoint: "hopper",
+    },
+    TRUNK: {
+        processId: "wOrb8b_V8QixWyXZub48Ki5B6OIDyf_p1ngoonsaRpQ",
+        endpoint: "hopper",
+    },
+} as const;
 
-            console.log(`Running script: ${scriptPath}`);
+/**
+ * Base Supabase configuration
+ */
+const SUPABASE_CONFIG = {
+    baseUrl: "https://kzmzniagsfcfnhgsjkpv.supabase.co/functions/v1",
+    apiKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6bXpuaWFnc2ZjZm5oZ3Nqa3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0MjI5NDEsImV4cCI6MjA2Mzk5ODk0MX0.IjB7j34CjhqUXQcO_dKM_9k3okmSomSpu9dtyPV2agU",
+    headers: {
+        accept: "*/*",
+        "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+        "content-type": "application/json",
+        dnt: "1",
+        origin: "https://dexi.defi.ao",
+        priority: "u=1, i",
+        referer: "https://dexi.defi.ao/",
+        "sec-ch-ua": '"Not)A;Brand";v="8", "Chromium";v="138"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"macOS"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "cross-site",
+        "user-agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        "x-client-info": "supabase-js-web/2.50.0",
+    },
+};
 
-            // Spawn a Node.js process to run the script
-            const childProcess = spawn("node", [scriptPath]);
+/**
+ * Fetch price using USD-Price endpoint (for AO and AR tokens)
+ */
+async function fetchUsdPrice(processId: string): Promise<any> {
+    const url = `${SUPABASE_CONFIG.baseUrl}/usd-price`;
 
-            let stdout = "";
-            let stderr = "";
-
-            // Collect stdout data
-            childProcess.stdout.on("data", (data) => {
-                stdout += data.toString();
-            });
-
-            // Collect stderr data
-            childProcess.stderr.on("data", (data) => {
-                stderr += data.toString();
-            });
-
-            // Handle process completion
-            childProcess.on("close", (code) => {
-                if (code === 0) {
-                    try {
-                        // Try to find the JSON output in the stdout
-                        const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            const priceInfo = JSON.parse(jsonMatch[0]);
-                            console.log("Price info:", priceInfo);
-                            resolve(priceInfo);
-                        } else {
-                            // If no JSON found, try to extract the price from the output
-                            const priceMatch = stdout.match(
-                                /WRAPPED_ARWEAVE price: \$(\d+\.\d+) USD/
-                            );
-                            if (priceMatch) {
-                                const price = priceMatch[1];
-                                const priceInfo: TokenPriceInfo = {
-                                    token: "WRAPPED_ARWEAVE",
-                                    id: "xU9zFkq3X2ZQ6olwNVvr1vUWIjc3kXTWr7xKQD6dh10",
-                                    price: price,
-                                    currency: "USD",
-                                    timestamp: new Date().toISOString(),
-                                };
-                                console.log("Extracted price info:", priceInfo);
-                                resolve(priceInfo);
-                            } else {
-                                reject(
-                                    new Error(
-                                        "Could not extract price information from script output"
-                                    )
-                                );
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error parsing script output:", error);
-                        reject(error);
-                    }
-                } else {
-                    console.error(`Script exited with code ${code}`);
-                    console.error("Stderr:", stderr);
-                    reject(
-                        new Error(`Script exited with code ${code}: ${stderr}`)
-                    );
-                }
-            });
-
-            // Handle process errors
-            childProcess.on("error", (error) => {
-                console.error("Error running script:", error);
-                reject(error);
-            });
-        } catch (error) {
-            console.error("Error in getArweaveTokenPrice:", error);
-            reject(error);
+    const response = await axios.post(
+        url,
+        { processId },
+        {
+            headers: {
+                ...SUPABASE_CONFIG.headers,
+                apikey: SUPABASE_CONFIG.apiKey,
+                authorization: `Bearer ${SUPABASE_CONFIG.apiKey}`,
+            },
         }
-    });
+    );
+
+    return response.data;
 }
 
 /**
- * Get updated token price using the Get-Price-For-Token action
- * @returns Promise<TokenPriceInfo> Price information for Arweave token
+ * Fetch price using Hopper endpoint (for ARIO and TRUNK tokens)
  */
-export async function getUpdatedTokenPrice(): Promise<TokenPriceInfo> {
-    return new Promise((resolve, reject) => {
-        try {
-            // Path to the script in the @randao-test directory
-            const scriptPath = path.resolve(
-                process.cwd(),
-                "../@randao-test/final-arweave-price.js"
-            );
+async function fetchHopperPrice(baseToken: string): Promise<any> {
+    const url = `${SUPABASE_CONFIG.baseUrl}/hopper`;
 
-            console.log(`Running script: ${scriptPath}`);
-
-            // Spawn a Node.js process to run the script
-            const childProcess = spawn("node", [scriptPath]);
-
-            let stdout = "";
-            let stderr = "";
-
-            // Collect stdout data
-            childProcess.stdout.on("data", (data) => {
-                stdout += data.toString();
-            });
-
-            // Collect stderr data
-            childProcess.stderr.on("data", (data) => {
-                stderr += data.toString();
-            });
-
-            // Handle process completion
-            childProcess.on("close", (code) => {
-                if (code === 0) {
-                    try {
-                        // Try to find the JSON output in the stdout
-                        const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            const priceInfo = JSON.parse(jsonMatch[0]);
-                            console.log("Price info:", priceInfo);
-                            resolve(priceInfo);
-                        } else {
-                            // If no JSON found, try to extract the price from the output
-                            const priceMatch = stdout.match(
-                                /WRAPPED_ARWEAVE price: \$(\d+\.\d+) USD/
-                            );
-                            if (priceMatch) {
-                                const price = priceMatch[1];
-                                const priceInfo: TokenPriceInfo = {
-                                    token: "WRAPPED_ARWEAVE",
-                                    id: "xU9zFkq3X2ZQ6olwNVvr1vUWIjc3kXTWr7xKQD6dh10",
-                                    price: price,
-                                    currency: "USD",
-                                    timestamp: new Date().toISOString(),
-                                };
-                                console.log("Extracted price info:", priceInfo);
-                                resolve(priceInfo);
-                            } else {
-                                reject(
-                                    new Error(
-                                        "Could not extract price information from script output"
-                                    )
-                                );
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error parsing script output:", error);
-                        reject(error);
-                    }
-                } else {
-                    console.error(`Script exited with code ${code}`);
-                    console.error("Stderr:", stderr);
-                    reject(
-                        new Error(`Script exited with code ${code}: ${stderr}`)
-                    );
-                }
-            });
-
-            // Handle process errors
-            childProcess.on("error", (error) => {
-                console.error("Error running script:", error);
-                reject(error);
-            });
-        } catch (error) {
-            console.error("Error in getUpdatedTokenPrice:", error);
-            reject(error);
+    const response = await axios.post(
+        url,
+        {
+            baseToken,
+            quoteToken: "USD",
+            priceOnly: true,
+        },
+        {
+            headers: {
+                ...SUPABASE_CONFIG.headers,
+                apikey: SUPABASE_CONFIG.apiKey,
+                authorization: `Bearer ${SUPABASE_CONFIG.apiKey}`,
+            },
         }
-    });
+    );
+
+    return response.data;
 }
 
 /**
- * Get AO token price using the Get-Stats action
- * @returns Promise<TokenPriceInfo> Price information for AO token
+ * Get token price by token symbol
+ * @param tokenSymbol Token symbol (AO, AR, ARIO, TRUNK)
+ * @returns Promise<TokenPriceInfo> Price information for the specified token
  */
-export async function getAOTokenPrice(): Promise<TokenPriceInfo> {
-    return new Promise((resolve, reject) => {
-        try {
-            // Path to the script in the @randao-test directory
-            const scriptPath = path.resolve(
-                process.cwd(),
-                "../@randao-test/ao-token-price.js"
-            );
+export async function getTokenPrice(
+    tokenSymbol: string
+): Promise<TokenPriceInfo> {
+    const upperSymbol = tokenSymbol.toUpperCase() as keyof typeof TOKEN_CONFIG;
 
-            console.log(`Running script: ${scriptPath}`);
+    if (!TOKEN_CONFIG[upperSymbol]) {
+        throw new Error(
+            `Unsupported token: ${tokenSymbol}. Supported tokens: ${Object.keys(
+                TOKEN_CONFIG
+            ).join(", ")}`
+        );
+    }
 
-            // Spawn a Node.js process to run the script
-            const childProcess = spawn("node", [scriptPath]);
+    const config = TOKEN_CONFIG[upperSymbol];
 
-            let stdout = "";
-            let stderr = "";
+    try {
+        let responseData: any;
 
-            // Collect stdout data
-            childProcess.stdout.on("data", (data) => {
-                stdout += data.toString();
-            });
+        if (config.endpoint === "usd-price") {
+            responseData = await fetchUsdPrice(config.processId);
 
-            // Collect stderr data
-            childProcess.stderr.on("data", (data) => {
-                stderr += data.toString();
-            });
+            return {
+                token: upperSymbol,
+                processId: responseData.processId || config.processId,
+                price: responseData.price,
+                currency: "USD",
+                timestamp: new Date().toISOString(),
+            };
+        } else {
+            responseData = await fetchHopperPrice(config.processId);
 
-            // Handle process completion
-            childProcess.on("close", (code) => {
-                if (code === 0) {
-                    try {
-                        // Try to find the JSON output in the stdout
-                        const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            const priceInfo = JSON.parse(jsonMatch[0]);
-                            console.log("Price info:", priceInfo);
-                            resolve(priceInfo);
-                        } else {
-                            // If no JSON found, try to extract the price from the output
-                            const priceMatch = stdout.match(
-                                /AO token price: \$(\d+\.\d+) USD/
-                            );
-                            if (priceMatch) {
-                                const price = priceMatch[1];
-                                const priceInfo: TokenPriceInfo = {
-                                    token: "AO",
-                                    id: "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc",
-                                    price: price,
-                                    currency: "USD",
-                                    timestamp: new Date().toISOString(),
-                                };
-                                console.log("Extracted price info:", priceInfo);
-                                resolve(priceInfo);
-                            } else {
-                                reject(
-                                    new Error(
-                                        "Could not extract price information from script output"
-                                    )
-                                );
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error parsing script output:", error);
-                        reject(error);
-                    }
-                } else {
-                    console.error(`Script exited with code ${code}`);
-                    console.error("Stderr:", stderr);
-                    reject(
-                        new Error(`Script exited with code ${code}: ${stderr}`)
-                    );
-                }
-            });
-
-            // Handle process errors
-            childProcess.on("error", (error) => {
-                console.error("Error running script:", error);
-                reject(error);
-            });
-        } catch (error) {
-            console.error("Error in getAOTokenPrice:", error);
-            reject(error);
+            return {
+                token: upperSymbol,
+                processId:
+                    responseData["Base-Token-Process"] || config.processId,
+                price: responseData.Price,
+                currency: responseData["Quote-Token-Process"] || "USD",
+                timestamp: new Date().toISOString(),
+            };
         }
-    });
+    } catch (error: any) {
+        console.error(`Error fetching ${upperSymbol} price:`, error);
+        throw new Error(
+            `Failed to fetch ${upperSymbol} price: ${error.message}`
+        );
+    }
+}
+
+/**
+ * Get supported tokens list
+ * @returns Array of supported token symbols
+ */
+export function getSupportedTokens(): string[] {
+    return Object.keys(TOKEN_CONFIG);
 }
