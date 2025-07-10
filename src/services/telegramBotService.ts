@@ -100,14 +100,20 @@ class TelegramBotService {
 
         // Handle start command
         this.bot.command('start', (ctx) => {
-            ctx.reply('Welcome! I am a workflow-based file processing bot. I will process your files when the workflow is running.');
+            ctx.reply(
+                'Welcome to Flowweave! 🌊\n\n' +
+                'Upload your media here while interacting with our permanent automations.\n' +
+                'You can build permanent automations from @flowweave_bot\n\n' +
+                'Note: Free plan has a 100KB file size limit. Paid plans with higher limits coming soon!\n\n' +
+                'Use /help to see available commands.'
+            );
         });
 
         // Handle help command
         this.bot.command('help', (ctx) => {
             ctx.reply(
                 'I am a workflow-based file processing bot.\n\n' +
-                'When the workflow is running, you can send me documents or photos, and I will process them.\n\n' +
+                'When the workflow is running, you can send me photos, and I will process them.\n\n' +
                 'Available commands:\n' +
                 '/start - Welcome message\n' +
                 '/help - Show this help information\n' +
@@ -364,6 +370,17 @@ class TelegramBotService {
             const fileId = photo.file_id;
             const fileSize = photo.file_size || 0;
 
+            // Check file size limit (100KB)
+            const MAX_FILE_SIZE = 100 * 1024; // 100KB in bytes
+            if (fileSize > MAX_FILE_SIZE) {
+                await ctx.reply(
+                    'Sorry, your photo exceeds the 100KB size limit of the free plan. ' +
+                    'Paid plans with higher limits will be available soon. ' +
+                    `Your photo size: ${this.formatFileSize(fileSize)}`
+                );
+                return null;
+            }
+
             // Get caption if available
             const caption = ctx.message.caption || 'photo';
             const fileName = `${caption}.jpg`;
@@ -407,9 +424,10 @@ class TelegramBotService {
 
             uploadedFiles.set(uniqueId, fileData);
 
-            // Send confirmation message
+            // Send confirmation message with size info
             await ctx.reply(
-                `Photo received and processed with ID: ${uniqueId}\n\n` +
+                `Photo received and processed with ID: ${uniqueId}\n` +
+                `Size: ${this.formatFileSize(fileSize)} (Free plan limit: 100KB)\n\n` +
                 `This photo will be processed by the workflow.`
             );
 
