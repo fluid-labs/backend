@@ -32,6 +32,10 @@ const TOKEN_CONFIG = {
         processId: "wOrb8b_V8QixWyXZub48Ki5B6OIDyf_p1ngoonsaRpQ",
         endpoint: "hopper",
     },
+    GAME: {
+        processId: "s6jcB3ctSbiDNwR-paJgy5iOAhahXahLul8exSLHbGE",
+        endpoint: "hopper",
+    },
 } as const;
 
 /**
@@ -108,7 +112,7 @@ async function fetchHopperPrice(baseToken: string): Promise<any> {
 
 /**
  * Get token price by token symbol
- * @param tokenSymbol Token symbol (AO, AR, ARIO, TRUNK)
+ * @param tokenSymbol Token symbol (AO, AR, ARIO, TRUNK, GAME)
  * @returns Promise<TokenPriceInfo> Price information for the specified token
  */
 export async function getTokenPrice(
